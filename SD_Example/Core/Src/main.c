@@ -100,20 +100,21 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   //mount SD card
-  if(f_mount(&SDFatFS, (TCHAR const*)SDPath, 0) != FR_OK) {
+
+  if(!BSP_SD_IsDetected()) {
 	  Error_Handler();
   }
-  else {
-	  //make file system
-	  if(f_mkfs((TCHAR const*)SDPath, FM_ANY, 0, rtext, sizeof(rtext)) != FR_OK) {
+
+  if(f_mount(&SDFatFS, (TCHAR const*)SDPath, 1) != FR_OK) {
+	  Error_Handler();
+  }
+  else { //file system already exists, try to open a file
+
+	  //open file for writing using create
+	  if(f_open(&SDFile, "stm32.txt", FA_CREATE_ALWAYS | FA_WRITE) != FR_OK) {
 		  Error_Handler();
-	  } else {
-		  //open file for writing using create
-		  if(f_open(&SDFile, "STM32.TXT", FA_CREATE_ALWAYS | FA_WRITE) != FR_OK) {
-			  Error_Handler();
 		  }
 	  }
-  }
 
   //write to the text file
   res = f_write(&SDFile, wtext, strlen((char *)wtext), (void *)&byteswritten);
@@ -186,7 +187,7 @@ void SystemClock_Config(void)
   PeriphClkInit.PLLSAI1.PLLSAI1M = 1;
   PeriphClkInit.PLLSAI1.PLLSAI1N = 16;
   PeriphClkInit.PLLSAI1.PLLSAI1P = RCC_PLLP_DIV7;
-  PeriphClkInit.PLLSAI1.PLLSAI1Q = RCC_PLLQ_DIV2;
+  PeriphClkInit.PLLSAI1.PLLSAI1Q = RCC_PLLQ_DIV4;
   PeriphClkInit.PLLSAI1.PLLSAI1R = RCC_PLLR_DIV2;
   PeriphClkInit.PLLSAI1.PLLSAI1ClockOut = RCC_PLLSAI1_48M2CLK;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
@@ -224,7 +225,7 @@ static void MX_SDMMC1_SD_Init(void)
   hsd1.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_DISABLE;
   hsd1.Init.ClockDiv = 0;
   /* USER CODE BEGIN SDMMC1_Init 2 */
-
+ // hsd1.Init.BusWide = SDMMC_BUS_WIDE_4B;
   /* USER CODE END SDMMC1_Init 2 */
 
 }
@@ -265,7 +266,7 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin : SD_Detected_Pin */
   GPIO_InitStruct.Pin = SD_Detected_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(SD_Detected_GPIO_Port, &GPIO_InitStruct);
 
 }

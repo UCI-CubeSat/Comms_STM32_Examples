@@ -132,7 +132,7 @@ void HAL_SD_MspInit(SD_HandleTypeDef* hsd)
     hdma_sdmmc1_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
     hdma_sdmmc1_rx.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
     hdma_sdmmc1_rx.Init.Mode = DMA_NORMAL;
-    hdma_sdmmc1_rx.Init.Priority = DMA_PRIORITY_LOW;
+    hdma_sdmmc1_rx.Init.Priority = DMA_PRIORITY_VERY_HIGH;
     if (HAL_DMA_Init(&hdma_sdmmc1_rx) != HAL_OK)
     {
       Error_Handler();
@@ -149,7 +149,7 @@ void HAL_SD_MspInit(SD_HandleTypeDef* hsd)
     hdma_sdmmc1_tx.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
     hdma_sdmmc1_tx.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
     hdma_sdmmc1_tx.Init.Mode = DMA_NORMAL;
-    hdma_sdmmc1_tx.Init.Priority = DMA_PRIORITY_LOW;
+    hdma_sdmmc1_tx.Init.Priority = DMA_PRIORITY_VERY_HIGH;
     if (HAL_DMA_Init(&hdma_sdmmc1_tx) != HAL_OK)
     {
       Error_Handler();
