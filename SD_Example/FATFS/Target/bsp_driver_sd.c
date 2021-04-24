@@ -4,7 +4,7 @@
  * @file    bsp_driver_sd.c for L4 (based on stm32l4r9i_eval_sd.c)
  * @brief   This file includes a generic uSD card driver.
  *          To be completed by the user according to the board used for the project.
- * @note    Some functions generated as weak: they can be overriden by
+ * @note    Some functions generated as weak: they can be overridden by
  *          - code in user files
  *          - or BSP code from the FW pack files
  *          if such files are added to the generated project (by the user).
@@ -56,15 +56,6 @@ __weak uint8_t BSP_SD_Init(void)
   }
   /* HAL SD initialization */
   sd_state = HAL_SD_Init(&hsd1);
-  /* Configure SD Bus width (4 bits mode selected) */
-  if (sd_state == MSD_OK)
-  {
-    /* Enable wide operation */
-    if (HAL_SD_ConfigWideBusOperation(&hsd1, SDMMC_BUS_WIDE_4B) != HAL_OK)
-    {
-      sd_state = MSD_ERROR;
-    }
-  }
 
   return sd_state;
 }
