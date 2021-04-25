@@ -67,7 +67,8 @@ static void MX_SDMMC1_SD_Init(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	FRESULT res; //fatfs function common result code
+	FRESULT res, stat_test; //fatfs function common result code
+	FILINFO stat_test_info;
 	uint32_t byteswritten, bytesread; //file write/read counts
 	uint8_t wtext[] = "STM32 FATFS works great!"; //file buffer
 	uint8_t rtext[_MAX_SS]; //file read buffer
@@ -97,6 +98,7 @@ int main(void)
 
   //mount SD card
 
+  //poll GPIO to make sure that SD card is connected
   if(!BSP_SD_IsDetected()) {
 	  Error_Handler();
   }
@@ -108,27 +110,38 @@ int main(void)
   }
   else { //file system already exists, try to open a file
 
-	  //open file for writing using create
-	  if(f_open(&SDFile, "stm32.txt", FA_CREATE_ALWAYS | FA_WRITE) != FR_OK) {
+	  //creating subdirectory (default relative to root)
+	  res = f_mkdir("sub_test");
+
+	  //open file, create it and write
+	  if(f_open(&SDFile, "sub_test/stm32.txt", FA_CREATE_ALWAYS | FA_WRITE) != FR_OK) {
 		  Error_Handler();
 		  }
 	  }
 
-  //write to the text file
-  res = f_write(&SDFile, wtext, strlen((char *)wtext), (void *)&byteswritten);
-  if((byteswritten == 0) || (res != FR_OK)) {
-	  Error_Handler();
-  } else {
-	  f_close(&SDFile);
+  	  //write to the text file
+  	  res = f_write(&SDFile, wtext, strlen((char *)wtext), (void *)&byteswritten);
+  	  if((byteswritten == 0) || (res != FR_OK)) {
+  		  Error_Handler();
+  	  } else {
+  		  f_close(&SDFile);
 
 	  //test read the file
-	  f_open(&SDFile, "STM32.TXT", FA_READ);
+	  f_open(&SDFile, "stm32.txt", FA_READ);
 	  memset(rtext, 0, sizeof(rtext));
 	  res = f_read(&SDFile, rtext, sizeof(rtext), (UINT*)&bytesread);
-	  if((bytesread == 0) || (res == FR_OK)) {
+	  if((bytesread == 0) || (res != FR_OK)) {
 		  Error_Handler();
 	  }
 	  f_close(&SDFile);
+
+	  //checking for file existence
+
+	  //expect FR_OK
+	  stat_test = f_stat("sub_test/stm32.txt", &stat_test_info);
+	  //expect FR_NO_FILE
+	  stat_test = f_stat("sub_test/stm31.txt", &stat_test_info);
+
   }
   f_mount(&SDFatFS, (TCHAR const*)NULL, 0);
   /* USER CODE END 2 */
