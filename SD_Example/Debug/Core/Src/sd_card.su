@@ -1,1 +1,2 @@
-sd_card.c:11:1:init_sd	16	static
+sd_card.c:16:1:init_sd	16	static
+sd_card.c:44:1:read_file	32	static

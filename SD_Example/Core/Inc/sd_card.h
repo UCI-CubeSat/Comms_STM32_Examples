@@ -14,9 +14,13 @@
 typedef struct {
 	FRESULT res;
 	FILINFO finfo;
+	uint8_t read_buffer[1024];
+	uint8_t write_buffer[1024];
 } SD_CARD;
 
 //functions
-int init_sd(SD_CARD *sd);
+int8_t init_sd(SD_CARD *sd);
+int32_t read_file(SD_CARD *sd, uint8_t file_path[50], uint16_t read_amount);
+
 
 #endif /* INC_SD_CARD_H_ */

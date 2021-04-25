@@ -103,8 +103,7 @@ int main(void)
   }
   else { //file system already exists, try to open a file
 
-	  //creating subdirectory (default relative to root)
-	  sd.res = f_mkdir("sub_test");
+	  read_file(&sd, "sub_test/stm32.txt", 35);
 
 	  //open file, create it and write
 	  if(f_open(&SDFile, "sub_test/stm32.txt", FA_CREATE_ALWAYS | FA_WRITE) != FR_OK) {
