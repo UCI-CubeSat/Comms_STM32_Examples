@@ -1,5 +1,5 @@
-main.c:67:5:main	4432	static
-main.c:164:6:SystemClock_Config	232	static
-main.c:227:13:MX_SDMMC1_SD_Init	4	static
-main.c:255:13:MX_GPIO_Init	40	static
-main.c:280:6:Error_Handler	4	static,ignoring_inline_asm
+main.c:65:5:main	4432	static
+main.c:158:6:SystemClock_Config	232	static
+main.c:221:13:MX_SDMMC1_SD_Init	4	static
+main.c:249:13:MX_GPIO_Init	40	static
+main.c:275:6:Error_Handler	4	static,ignoring_inline_asm

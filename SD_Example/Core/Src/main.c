@@ -20,10 +20,9 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "fatfs.h"
-
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "sd_card.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -42,7 +41,6 @@
 
 /* Private variables ---------------------------------------------------------*/
 SD_HandleTypeDef hsd1;
-
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -67,8 +65,7 @@ static void MX_SDMMC1_SD_Init(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	FRESULT res, stat_test; //fatfs function common result code
-	FILINFO stat_test_info;
+	SD_CARD sd;
 	uint32_t byteswritten, bytesread; //file write/read counts
 	uint8_t wtext[] = "STM32 FATFS works great!"; //file buffer
 	uint8_t rtext[_MAX_SS]; //file read buffer
@@ -95,23 +92,19 @@ int main(void)
   MX_SDMMC1_SD_Init();
   MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
+  //FATFS_LinkDriver(&SD_Driver, SDPath);
 
-  //mount SD card
-
-  //poll GPIO to make sure that SD card is connected
-  if(!BSP_SD_IsDetected()) {
+/*  if(init_sd(&sd) == -1) {
 	  Error_Handler();
-  }
+*/
 
-  FATFS_LinkDriver(&SD_Driver, SDPath);
-
-  if(f_mount(&SDFatFS, (TCHAR const*)SDPath, 1) != FR_OK) {
+  if(init_sd(&sd) != FR_OK) {
 	  Error_Handler();
   }
   else { //file system already exists, try to open a file
 
 	  //creating subdirectory (default relative to root)
-	  res = f_mkdir("sub_test");
+	  sd.res = f_mkdir("sub_test");
 
 	  //open file, create it and write
 	  if(f_open(&SDFile, "sub_test/stm32.txt", FA_CREATE_ALWAYS | FA_WRITE) != FR_OK) {
@@ -120,8 +113,8 @@ int main(void)
 	  }
 
   	  //write to the text file
-  	  res = f_write(&SDFile, wtext, strlen((char *)wtext), (void *)&byteswritten);
-  	  if((byteswritten == 0) || (res != FR_OK)) {
+  	  sd.res = f_write(&SDFile, wtext, strlen((char *)wtext), (void *)&byteswritten);
+  	  if((byteswritten == 0) || (sd.res != FR_OK)) {
   		  Error_Handler();
   	  } else {
   		  f_close(&SDFile);
@@ -129,20 +122,21 @@ int main(void)
 	  //test read the file
 	  f_open(&SDFile, "stm32.txt", FA_READ);
 	  memset(rtext, 0, sizeof(rtext));
-	  res = f_read(&SDFile, rtext, sizeof(rtext), (UINT*)&bytesread);
-	  if((bytesread == 0) || (res != FR_OK)) {
+	  sd.res = f_read(&SDFile, rtext, sizeof(rtext), (UINT*)&bytesread);
+	  if((bytesread == 0) || (sd.res != FR_OK)) {
 		  Error_Handler();
 	  }
 	  f_close(&SDFile);
 
 	  //checking for file existence
-
-	  //expect FR_OK
+/*
+	  //expect FR_OK, functions properly
 	  stat_test = f_stat("sub_test/stm32.txt", &stat_test_info);
-	  //expect FR_NO_FILE
+	  //expect FR_NO_FILE, functions properly
 	  stat_test = f_stat("sub_test/stm31.txt", &stat_test_info);
-
+*/
   }
+  //unmount disk
   f_mount(&SDFatFS, (TCHAR const*)NULL, 0);
   /* USER CODE END 2 */
 
@@ -270,6 +264,7 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+//init SD Card (in main since it involves hardware)
 
 /* USER CODE END 4 */
 
