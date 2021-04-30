@@ -20,7 +20,8 @@ typedef struct {
 
 //functions
 int8_t init_sd(SD_CARD *sd);
-int32_t read_file(SD_CARD *sd, uint8_t file_path[50], uint16_t read_amount);
-
+int32_t read_from_file(SD_CARD *sd, uint8_t file_path[50], uint16_t read_amount);
+int32_t write_to_file(SD_CARD *sd, uint8_t file_path[50], uint16_t write_amount);
+void unmount(SD_CARD *sd);
 
 #endif /* INC_SD_CARD_H_ */

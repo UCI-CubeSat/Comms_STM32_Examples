@@ -67,8 +67,9 @@ int main(void)
   /* USER CODE BEGIN 1 */
 	SD_CARD sd;
 	uint32_t byteswritten, bytesread; //file write/read counts
-	uint8_t wtext[] = "STM32 FATFS works great!"; //file buffer
+	uint8_t wtext[] = "Yet another test"; //file buffer
 	uint8_t rtext[_MAX_SS]; //file read buffer
+	uint8_t file_path[50] = "sub_test/stm32.txt";
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -103,7 +104,14 @@ int main(void)
   }
   else { //file system already exists, try to open a file
 
-	  read_file(&sd, "sub_test/stm32.txt", 35);
+	  bytesread = read_from_file(&sd, file_path, 35);
+
+	  memcpy(&sd.write_buffer, wtext, sizeof(wtext));
+	  byteswritten = write_to_file(&sd, file_path, sizeof(wtext));
+
+	  unmount(&sd);
+
+	  //older tests below
 
 	  //open file, create it and write
 	  if(f_open(&SDFile, "sub_test/stm32.txt", FA_CREATE_ALWAYS | FA_WRITE) != FR_OK) {

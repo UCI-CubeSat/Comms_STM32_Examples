@@ -1,2 +1,4 @@
-sd_card.c:16:1:init_sd	16	static
-sd_card.c:44:1:read_file	32	static
+sd_card.c:17:1:init_sd	16	static
+sd_card.c:47:1:read_from_file	32	static
+sd_card.c:78:1:write_to_file	48	dynamic
+sd_card.c:124:1:unmount	16	static
