@@ -20,7 +20,6 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
-#include "ultrasonic.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -28,6 +27,8 @@
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
+typedef StaticTask_t osStaticThreadDef_t;
+typedef StaticSemaphore_t osStaticMutexDef_t;
 /* USER CODE BEGIN PTD */
 
 /* USER CODE END PTD */
@@ -42,28 +43,49 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-UART_HandleTypeDef huart4;
-
 /* Definitions for blink01 */
 osThreadId_t blink01Handle;
+uint32_t blink01Buffer[ 128 ];
+osStaticThreadDef_t blink01ControlBlock;
 const osThreadAttr_t blink01_attributes = {
   .name = "blink01",
+  .cb_mem = &blink01ControlBlock,
+  .cb_size = sizeof(blink01ControlBlock),
+  .stack_mem = &blink01Buffer[0],
+  .stack_size = sizeof(blink01Buffer),
   .priority = (osPriority_t) osPriorityNormal,
-  .stack_size = 128 * 4
 };
 /* Definitions for blink02 */
 osThreadId_t blink02Handle;
+uint32_t blink02Buffer[ 128 ];
+osStaticThreadDef_t blink02ControlBlock;
 const osThreadAttr_t blink02_attributes = {
   .name = "blink02",
+  .cb_mem = &blink02ControlBlock,
+  .cb_size = sizeof(blink02ControlBlock),
+  .stack_mem = &blink02Buffer[0],
+  .stack_size = sizeof(blink02Buffer),
   .priority = (osPriority_t) osPriorityBelowNormal,
-  .stack_size = 128 * 4
 };
-/* Definitions for distance */
-osThreadId_t distanceHandle;
-const osThreadAttr_t distance_attributes = {
-  .name = "distance",
-  .priority = (osPriority_t) osPriorityAboveNormal,
-  .stack_size = 128 * 4
+/* Definitions for button */
+osThreadId_t buttonHandle;
+uint32_t buttonBuffer[ 128 ];
+osStaticThreadDef_t buttonControlBlock;
+const osThreadAttr_t button_attributes = {
+  .name = "button",
+  .cb_mem = &buttonControlBlock,
+  .cb_size = sizeof(buttonControlBlock),
+  .stack_mem = &buttonBuffer[0],
+  .stack_size = sizeof(buttonBuffer),
+  .priority = (osPriority_t) osPriorityHigh,
+};
+/* Definitions for protect */
+osMutexId_t protectHandle;
+osStaticMutexDef_t myMutex01ControlBlock;
+const osMutexAttr_t protect_attributes = {
+  .name = "protect",
+  .cb_mem = &myMutex01ControlBlock,
+  .cb_size = sizeof(myMutex01ControlBlock),
 };
 /* USER CODE BEGIN PV */
 
@@ -72,10 +94,9 @@ const osThreadAttr_t distance_attributes = {
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_UART4_Init(void);
 void StartBlink01(void *argument);
 void StartBlink02(void *argument);
-void checkDist(void *argument);
+void StartTask03(void *argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -114,13 +135,15 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_UART4_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
 
   /* Init scheduler */
   osKernelInitialize();
+  /* Create the mutex(es) */
+  /* creation of protect */
+  protectHandle = osMutexNew(&protect_attributes);
 
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
@@ -145,8 +168,8 @@ int main(void)
   /* creation of blink02 */
   blink02Handle = osThreadNew(StartBlink02, NULL, &blink02_attributes);
 
-  /* creation of distance */
-  distanceHandle = osThreadNew(checkDist, NULL, &distance_attributes);
+  /* creation of button */
+  buttonHandle = osThreadNew(StartTask03, NULL, &button_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -179,7 +202,6 @@ void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
-  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
@@ -212,53 +234,12 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_UART4;
-  PeriphClkInit.Uart4ClockSelection = RCC_UART4CLKSOURCE_PCLK1;
-  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
-  {
-    Error_Handler();
-  }
   /** Configure the main internal regulator output voltage
   */
   if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1) != HAL_OK)
   {
     Error_Handler();
   }
-}
-
-/**
-  * @brief UART4 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_UART4_Init(void)
-{
-
-  /* USER CODE BEGIN UART4_Init 0 */
-
-  /* USER CODE END UART4_Init 0 */
-
-  /* USER CODE BEGIN UART4_Init 1 */
-
-  /* USER CODE END UART4_Init 1 */
-  huart4.Instance = UART4;
-  huart4.Init.BaudRate = 19200;
-  huart4.Init.WordLength = UART_WORDLENGTH_8B;
-  huart4.Init.StopBits = UART_STOPBITS_1;
-  huart4.Init.Parity = UART_PARITY_NONE;
-  huart4.Init.Mode = UART_MODE_TX_RX;
-  huart4.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart4.Init.OverSampling = UART_OVERSAMPLING_16;
-  huart4.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-  huart4.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if (HAL_UART_Init(&huart4) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN UART4_Init 2 */
-
-  /* USER CODE END UART4_Init 2 */
-
 }
 
 /**
@@ -271,10 +252,18 @@ static void MX_GPIO_Init(void)
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
   /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOC_CLK_ENABLE();
+  __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : blue_button_Pin */
+  GPIO_InitStruct.Pin = blue_button_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(blue_button_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : LD2_Pin */
   GPIO_InitStruct.Pin = LD2_Pin;
@@ -283,10 +272,20 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
 
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 5, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+
 }
 
 /* USER CODE BEGIN 4 */
-
+void EXTI15_10_IRQHandler(void)
+{
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_13);
+  BaseType_t checkIfYieldRequired;
+  checkIfYieldRequired = xTaskResumeFromISR(buttonHandle);
+  portYIELD_FROM_ISR(checkIfYieldRequired);
+}
 /* USER CODE END 4 */
 
 /* USER CODE BEGIN Header_StartBlink01 */
@@ -303,7 +302,7 @@ void StartBlink01(void *argument)
   for(;;)
   {
 	  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
-	  osDelay(1000);
+	  osDelay(500);
   }
   //line below is for the even that the loop somehow gets exited
   osThreadTerminate(NULL);
@@ -324,35 +323,33 @@ void StartBlink02(void *argument)
   for(;;)
   {
 	  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
-	  osDelay(200);
+	  osDelay(600);
   }
   //line below is for the even that the loop somehow gets exited
   osThreadTerminate(NULL);
   /* USER CODE END StartBlink02 */
 }
 
-/* USER CODE BEGIN Header_checkDist */
+/* USER CODE BEGIN Header_StartTask03 */
 /**
-* @brief Function implementing the distance thread.
+* @brief Function implementing the button thread.
 * @param argument: Not used
 * @retval None
 */
-/* USER CODE END Header_checkDist */
-void checkDist(void *argument)
+/* USER CODE END Header_StartTask03 */
+void StartTask03(void *argument)
 {
-	/* USER CODE BEGIN checkDist */
-	/* Infinite loop */
-	char retval = '0';
-	uint8_t dec = 0;
-
-	for(;;)
-	{
-		retval = measure_distance(&huart4);
-		dec = atoi(retval);
-		printf("%d", dec);
-		osDelay(100);
-	}
-	/* USER CODE END checkDist */
+  /* USER CODE BEGIN StartTask03 */
+  /* Infinite loop */
+  for(;;)
+  {
+	vTaskSuspend(NULL); //suspend task each time, wait for external signal
+	//set the pin value to 0
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+	osDelay(2500);
+	//block task
+  }
+  /* USER CODE END StartTask03 */
 }
 
  /**
