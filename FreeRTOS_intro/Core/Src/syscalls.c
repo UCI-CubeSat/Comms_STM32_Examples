@@ -30,7 +30,10 @@
 #include <time.h>
 #include <sys/time.h>
 #include <sys/times.h>
+#include <sys/unistd.h>
+#include "stm32l4xx_hal.h"
 
+extern UART_HandleTypeDef huart2;
 
 /* Variables */
 //#undef errno
@@ -78,6 +81,7 @@ __attribute__((weak)) int _read(int file, char *ptr, int len)
 return len;
 }
 
+/*
 __attribute__((weak)) int _write(int file, char *ptr, int len)
 {
 	int DataIdx;
@@ -87,6 +91,21 @@ __attribute__((weak)) int _write(int file, char *ptr, int len)
 		__io_putchar(*ptr++);
 	}
 	return len;
+}
+*/
+
+int _write(int file, char *data, int len) {
+	//break if file isn't std out or if it has an error
+	if((file != STDOUT_FILENO) && (file != STDERR_FILENO)) {
+		errno = EBADF;
+		return -1;
+	}
+
+	//send uart data of length len, timeout of 1000 ticks
+	HAL_StatusTypeDef status = HAL_UART_Transmit(&huart2, (uint8_t*)data, len, 0);
+
+	//# of bytes written or 0
+	return (status == HAL_OK ? len : 0);
 }
 
 int _close(int file)

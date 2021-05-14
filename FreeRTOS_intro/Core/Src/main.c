@@ -28,7 +28,9 @@
 
 /* Private typedef -----------------------------------------------------------*/
 typedef StaticTask_t osStaticThreadDef_t;
+typedef StaticTimer_t osStaticTimerDef_t;
 typedef StaticSemaphore_t osStaticMutexDef_t;
+typedef StaticSemaphore_t osStaticSemaphoreDef_t;
 /* USER CODE BEGIN PTD */
 
 /* USER CODE END PTD */
@@ -43,6 +45,8 @@ typedef StaticSemaphore_t osStaticMutexDef_t;
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+UART_HandleTypeDef huart2;
+
 /* Definitions for blink01 */
 osThreadId_t blink01Handle;
 uint32_t blink01Buffer[ 128 ];
@@ -79,6 +83,14 @@ const osThreadAttr_t button_attributes = {
   .stack_size = sizeof(buttonBuffer),
   .priority = (osPriority_t) osPriorityHigh,
 };
+/* Definitions for timer_test */
+osTimerId_t timer_testHandle;
+osStaticTimerDef_t timer_testControlBlock;
+const osTimerAttr_t timer_test_attributes = {
+  .name = "timer_test",
+  .cb_mem = &timer_testControlBlock,
+  .cb_size = sizeof(timer_testControlBlock),
+};
 /* Definitions for protect */
 osMutexId_t protectHandle;
 osStaticMutexDef_t myMutex01ControlBlock;
@@ -87,6 +99,14 @@ const osMutexAttr_t protect_attributes = {
   .cb_mem = &myMutex01ControlBlock,
   .cb_size = sizeof(myMutex01ControlBlock),
 };
+/* Definitions for sema_test */
+osSemaphoreId_t sema_testHandle;
+osStaticSemaphoreDef_t sema_testControlBlock;
+const osSemaphoreAttr_t sema_test_attributes = {
+  .name = "sema_test",
+  .cb_mem = &sema_testControlBlock,
+  .cb_size = sizeof(sema_testControlBlock),
+};
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -94,9 +114,11 @@ const osMutexAttr_t protect_attributes = {
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_USART2_UART_Init(void);
 void StartBlink01(void *argument);
 void StartBlink02(void *argument);
 void StartTask03(void *argument);
+void timer_callback(void *argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -135,6 +157,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -149,9 +172,17 @@ int main(void)
   /* add mutexes, ... */
   /* USER CODE END RTOS_MUTEX */
 
+  /* Create the semaphores(s) */
+  /* creation of sema_test */
+  sema_testHandle = osSemaphoreNew(1, 1, &sema_test_attributes);
+
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   /* add semaphores, ... */
   /* USER CODE END RTOS_SEMAPHORES */
+
+  /* Create the timer(s) */
+  /* creation of timer_test */
+  timer_testHandle = osTimerNew(timer_callback, osTimerPeriodic, NULL, &timer_test_attributes);
 
   /* USER CODE BEGIN RTOS_TIMERS */
   /* start timers, add new ones, ... */
@@ -202,6 +233,7 @@ void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+  RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
@@ -234,12 +266,53 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART2;
+  PeriphClkInit.Usart2ClockSelection = RCC_USART2CLKSOURCE_PCLK1;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
+  {
+    Error_Handler();
+  }
   /** Configure the main internal regulator output voltage
   */
   if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1) != HAL_OK)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief USART2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART2_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART2_Init 0 */
+
+  /* USER CODE END USART2_Init 0 */
+
+  /* USER CODE BEGIN USART2_Init 1 */
+
+  /* USER CODE END USART2_Init 1 */
+  huart2.Instance = USART2;
+  huart2.Init.BaudRate = 115200;
+  huart2.Init.WordLength = UART_WORDLENGTH_8B;
+  huart2.Init.StopBits = UART_STOPBITS_1;
+  huart2.Init.Parity = UART_PARITY_NONE;
+  huart2.Init.Mode = UART_MODE_TX_RX;
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart2.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART2_Init 2 */
+
+  /* USER CODE END USART2_Init 2 */
+
 }
 
 /**
@@ -301,8 +374,14 @@ void StartBlink01(void *argument)
   /* Infinite loop */
   for(;;)
   {
-	  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
-	  osDelay(500);
+	  //example of taking mutex and freeing it
+	  osSemaphoreAcquire(sema_testHandle, osWaitForever);
+	  //osMutexWait(protectHandle, osWaitForever);
+	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
+	  //osMutexRelease(protectHandle);
+	  osDelay(1500);
+	  osSemaphoreRelease(sema_testHandle);
+	  osDelay(50);
   }
   //line below is for the even that the loop somehow gets exited
   osThreadTerminate(NULL);
@@ -322,8 +401,11 @@ void StartBlink02(void *argument)
   /* Infinite loop */
   for(;;)
   {
-	  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
-	  osDelay(600);
+	  osSemaphoreAcquire(sema_testHandle, osWaitForever);
+	  	  //osMutexRelease(protectHandle);
+	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+	  osDelay(400);
+	  osSemaphoreRelease(sema_testHandle);
   }
   //line below is for the even that the loop somehow gets exited
   osThreadTerminate(NULL);
@@ -350,6 +432,14 @@ void StartTask03(void *argument)
 	//block task
   }
   /* USER CODE END StartTask03 */
+}
+
+/* timer_callback function */
+void timer_callback(void *argument)
+{
+  /* USER CODE BEGIN timer_callback */
+
+  /* USER CODE END timer_callback */
 }
 
  /**
