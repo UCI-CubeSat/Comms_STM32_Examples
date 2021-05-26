@@ -56,7 +56,7 @@ const osThreadAttr_t defaultTask_attributes = {
 };
 /* Definitions for SDTask */
 osThreadId_t SDTaskHandle;
-uint32_t SDTaskBuffer[ 128 ];
+uint32_t SDTaskBuffer[ 512 ];
 osStaticThreadDef_t SDTaskControlBlock;
 const osThreadAttr_t SDTask_attributes = {
   .name = "SDTask",
@@ -334,7 +334,7 @@ void Start_SD_Task(void *argument)
   /* Infinite loop */
   SD_CARD sd;
   uint32_t byteswritten, bytesread; //file write/read counts
-  uint8_t wtext[] = "Yet another test"; //file buffer
+  uint8_t wtext[] = "Let's see if this runs test"; //file buffer
   uint8_t file_path[50] = "/sub_test/stm32.txt";
   for(;;)
   {
@@ -344,16 +344,15 @@ void Start_SD_Task(void *argument)
     }
 	else { //file system already exists, try to open a file
 
-	bytesread = read_from_file(&sd, file_path, 35);
+		bytesread = read_from_file(&sd, file_path, 35);
 
-	memcpy(&sd.write_buffer, wtext, sizeof(wtext));
-	byteswritten = write_to_file(&sd, file_path, sizeof(wtext));
+		memcpy(&sd.write_buffer, wtext, sizeof(wtext));
+		byteswritten = write_to_file(&sd, file_path, sizeof(wtext));
 
-	unmount(&sd);
-	//taskEXIT_CRITICAL();
-
-    osDelay(10000);
+		unmount(&sd);
 	}
+	//taskEXIT_CRITICAL();
+	osDelay(10000);
   }
   /* USER CODE END Start_SD_Task */
 }

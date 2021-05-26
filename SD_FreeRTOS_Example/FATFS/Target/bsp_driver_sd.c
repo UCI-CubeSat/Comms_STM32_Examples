@@ -30,6 +30,7 @@
 /* USER CODE END 0 */
 #else
 /* USER CODE BEGIN FirstSection */
+#define SD_TIMEOUT 2 * 1000
 /* can be used to modify / undefine following code or add new definitions */
 /* USER CODE END FirstSection */
 /* Includes ------------------------------------------------------------------*/

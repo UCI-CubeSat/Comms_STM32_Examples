@@ -122,13 +122,13 @@ void HAL_SD_MspInit(SD_HandleTypeDef* hsd)
     /* SDMMC1 Init */
     hdma_sdmmc1.Instance = DMA2_Channel4;
     hdma_sdmmc1.Init.Request = DMA_REQUEST_7;
-    hdma_sdmmc1.Init.Direction = DMA_PERIPH_TO_MEMORY;
+    hdma_sdmmc1.Init.Direction = DMA_MEMORY_TO_PERIPH;
     hdma_sdmmc1.Init.PeriphInc = DMA_PINC_DISABLE;
     hdma_sdmmc1.Init.MemInc = DMA_MINC_ENABLE;
     hdma_sdmmc1.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
     hdma_sdmmc1.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
     hdma_sdmmc1.Init.Mode = DMA_NORMAL;
-    hdma_sdmmc1.Init.Priority = DMA_PRIORITY_LOW;
+    hdma_sdmmc1.Init.Priority = DMA_PRIORITY_VERY_HIGH;
     if (HAL_DMA_Init(&hdma_sdmmc1) != HAL_OK)
     {
       Error_Handler();
