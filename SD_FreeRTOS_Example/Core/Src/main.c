@@ -334,7 +334,7 @@ void Start_SD_Task(void *argument)
   /* Infinite loop */
   SD_CARD sd;
   uint32_t byteswritten, bytesread; //file write/read counts
-  uint8_t wtext[] = "Let's see if this runs test"; //file buffer
+  uint8_t wtext[] = "Test run"; //file buffer
   uint8_t file_path[50] = "/sub_test/stm32.txt";
   for(;;)
   {
@@ -347,11 +347,12 @@ void Start_SD_Task(void *argument)
 		bytesread = read_from_file(&sd, file_path, 35);
 
 		memcpy(&sd.write_buffer, wtext, sizeof(wtext));
-		byteswritten = write_to_file(&sd, file_path, sizeof(wtext));
+		byteswritten = write_to_file(&sd, file_path, sizeof(wtext) - 1);
 
 		unmount(&sd);
 	}
 	//taskEXIT_CRITICAL();
+
 	osDelay(10000);
   }
   /* USER CODE END Start_SD_Task */

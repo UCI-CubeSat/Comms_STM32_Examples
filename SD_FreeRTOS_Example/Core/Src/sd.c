@@ -51,8 +51,15 @@ read_from_file(SD_CARD *sd,			//SD card instance
 
 	UINT bytes_read;
 
+	//check if file exists
+	sd->res = f_stat((TCHAR *)file_path, &sd->finfo);
+	//file can't be read if it doesn't exist
+	if(sd->res != FR_OK) {
+		return -1;
+	}
+
 	//open file for reading
-	sd->res = f_open(&SDFile, (char*)file_path, FA_READ);
+	sd->res = f_open(&SDFile, (char*)file_path, FA_READ | FA_OPEN_EXISTING);
 	if(sd->res != FR_OK) {
 		return -1;
 	}
@@ -80,12 +87,12 @@ write_to_file(SD_CARD *sd,		 //SD card instance
 		   )
 {
 	UINT bytes_written;
-	unsigned char w_str[write_amount+1];
+	uint8_t w_str[write_amount+1];
 	//copy buffer to local array (may need to improve this later)
 	memcpy(w_str, &sd->write_buffer, write_amount);
 
 	//check if file exists
-	sd->res = f_stat((char*)file_path, &sd->finfo);
+	sd->res = f_stat((TCHAR *)file_path, &sd->finfo);
 
 	//adhere to different cases
 	switch(sd->res) {
