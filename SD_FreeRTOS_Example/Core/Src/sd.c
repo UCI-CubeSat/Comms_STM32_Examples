@@ -51,6 +51,9 @@ read_from_file(SD_CARD *sd,			//SD card instance
 
 	UINT bytes_read;
 
+	//set default state, will be overwritten if file exists
+	sd->res = FR_NO_FILE;
+
 	//check if file exists
 	sd->res = f_stat((TCHAR *)file_path, &sd->finfo);
 	//file can't be read if it doesn't exist
@@ -59,7 +62,7 @@ read_from_file(SD_CARD *sd,			//SD card instance
 	}
 
 	//open file for reading
-	sd->res = f_open(&SDFile, (char*)file_path, FA_READ | FA_OPEN_EXISTING);
+	sd->res = f_open(&SDFile, (char*)file_path, FA_READ);
 	if(sd->res != FR_OK) {
 		return -1;
 	}

@@ -1,4 +1,4 @@
 sd.c:16:1:init_sd	16	static
 sd.c:46:1:read_from_file	32	static
-sd.c:84:1:write_to_file	48	dynamic
-sd.c:125:1:unmount	16	static
+sd.c:87:1:write_to_file	48	dynamic
+sd.c:128:1:unmount	16	static
